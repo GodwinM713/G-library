@@ -1,0 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:        #1c1814;
+  --ink-2:      #4a443c;
+  --ink-3:      #8a8077;
+  --paper:      #faf7f2;
+  --paper-2:    #f2ede4;
+  --paper-3:    #e8e0d2;
+  --accent:     #8b4513;
+  --accent-2:   #c46a2d;
+  --accent-bg:  #f5ece2;
+  --green:      #2d5a3d;
+  --green-bg:   #e8f2ec;
+  --blue:       #1e3a5f;
+  --blue-bg:    #e8eef6;
+  --border:     #ddd6c8;
+  --border-2:   #ccc3b2;
+  --radius:     8px;
+  --radius-lg:  12px;
+  --shadow:     0 1px 3px rgba(28,24,20,0.08), 0 4px 12px rgba(28,24,20,0.05);
+  --shadow-lg:  0 4px 16px rgba(28,24,20,0.12), 0 1px 4px rgba(28,24,20,0.06);
+}
+
+html, body, #root { height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 99px; }
+
+/* Inputs */
+input, select, textarea {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 3px rgba(196,106,45,0.12);
+}
+textarea { resize: vertical; }
+
+/* Buttons */
+button {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  background: var(--paper);
+  color: var(--ink-2);
+  transition: all .15s;
+}
+button:hover { background: var(--paper-2); border-color: var(--border-2); }
+button:active { transform: scale(0.98); }
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+button.primary:hover { background: #7a3b10; }
+button.ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-3);
+  padding: 6px 10px;
+}
+button.ghost:hover { background: var(--paper-2); color: var(--ink); }
+button.danger { color: #9b2020; }
+button.danger:hover { background: #fef2f2; border-color: #fca5a5; }
+
+/* ── Mobile responsive overrides ────────────────────────────── */
+@media (max-width: 640px) {
+  html, body, #root { height: 100dvh; overflow: hidden; }
+
+  /* Hide sidebar text on very small screens, show icons only */
+  aside { width: 56px !important; min-width: 56px !important; }
+  aside span[style*="label"],
+  aside button > *:last-child { display: none; }
+  aside button { padding: 12px !important; justify-content: center !important; }
+  aside > div:first-child > div:first-child { display: none; } /* hide "Personal Library" text */
+  aside > div:first-child > div:nth-child(2) { display: none; } /* hide book count */
+
+  /* Main content takes full width */
+  main { width: calc(100vw - 56px) !important; }
+
+  /* Stack filter bar on search page */
+  div[style*="flex"][style*="gap: 8px"] > input[type="text"] { min-width: 0 !important; }
+
+  /* Larger tap targets */
+  button { min-height: 40px; }
+
+  /* Full width form */
+  div[style*="maxWidth: 680"] { max-width: 100% !important; padding: 14px 16px !important; }
+
+  /* Stack 2-col grid on mobile */
+  div[style*="gridTemplateColumns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+  div[style*="gridTemplateColumns: '1fr 1fr'"] {
+    grid-template-columns: 1fr !important;
+  }
+}
