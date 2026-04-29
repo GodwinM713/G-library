@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getAllGenres, addCustomGenre, getGenreColor } from '../utils/callnum';
+import { getAllGenres, addCustomGenre } from '../utils/callnum';
 
 // A genre dropdown that includes a "+ Add genre" option and persists custom genres
 export default function GenreSelect({ value, onChange }) {
