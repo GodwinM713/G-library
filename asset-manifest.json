@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/G-library/static/css/main.80b1b32a.css",
+    "main.js": "/G-library/static/js/main.0577092c.js",
+    "index.html": "/G-library/index.html",
+    "main.80b1b32a.css.map": "/G-library/static/css/main.80b1b32a.css.map",
+    "main.0577092c.js.map": "/G-library/static/js/main.0577092c.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.80b1b32a.css",
+    "static/js/main.0577092c.js"
+  ]
+}
