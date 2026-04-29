@@ -82,7 +82,7 @@ export default function ShelvesPage({ books, onFilterShelf }) {
                 {name}
               </div>
               <div style={{ fontSize: 12, color: col.accent, opacity: 0.7 }}>
-                {bks.length} book{bks.length !== 1 ? 's' : ''} · {read} read
+                {bks.length} book{bks.length !== 1 ? 's' : ''} - {read} read
               </div>
             </div>
           );

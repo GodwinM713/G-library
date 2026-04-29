@@ -17,7 +17,7 @@ export default function NumberingGuideModal({ onClose }) {
 
           {/* Format */}
           <div style={{ background:'var(--accent-bg)', borderRadius:'var(--radius-lg)', padding:'16px 20px', textAlign:'center', fontFamily:"'DM Mono',monospace", fontSize:22, fontWeight:500, color:'var(--accent)', letterSpacing:'0.08em', border:'1px solid var(--border)' }}>
-            FIC · ORW · ML · 823.914 · 001
+            FIC - ORW - ML - 823.914 - 001
           </div>
 
           {/* Breakdown blocks */}

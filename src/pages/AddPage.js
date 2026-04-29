@@ -164,11 +164,11 @@ export default function AddPage({ books, onAdd, onNav }) {
       {!isLended && (
         <div style={{ background:'var(--paper-2)', border:'1px solid var(--border)', borderRadius:'var(--radius-lg)', padding:'14px 18px', marginBottom:20, display:'flex', alignItems:'center', gap:16 }}>
           <div style={{ fontFamily:"'DM Mono',monospace", fontSize:18, fontWeight:500, color: preview ? 'var(--accent)' : 'var(--ink-3)', minWidth:160 }}>
-            {preview ? preview.callnum : '· · ·'}
+            {preview ? preview.callnum : '- - -'}
           </div>
           <div style={{ fontSize:12, color:'var(--ink-3)', lineHeight:1.6 }}>
             {preview
-              ? `${genres[form.genre]||form.genre} · author · ${getLangCode(form.lang)||'lang'} · DDC · seq`
+              ? `${genres[form.genre]||form.genre} - author - ${getLangCode(form.lang)||'lang'} - DDC - seq`
               : 'Fill genre + author to preview call number'}
           </div>
         </div>

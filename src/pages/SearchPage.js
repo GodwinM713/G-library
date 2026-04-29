@@ -27,6 +27,12 @@ export default function SearchPage({ books, onUpdate, onDelete }) {
       });
   }, [books, query, filterGenre, filterStatus, sortBy]);
 
+  const handleUpdate = async (updated) => {
+    const u = await onUpdate(updated);
+    setSelected(u || updated);
+    return u;
+  };
+
   const cycleStatus = async (book) => {
     const cycle = { unread: 'reading', reading: 'read', read: 'unread' };
     const updated = await onUpdate({ ...book, status: cycle[book.status] });
@@ -117,6 +123,7 @@ export default function SearchPage({ books, onUpdate, onDelete }) {
           book={selected}
           onClose={() => setSelected(null)}
           onDelete={handleDelete}
+          onUpdate={handleUpdate}
           onCycleStatus={cycleStatus}
         />
       )}

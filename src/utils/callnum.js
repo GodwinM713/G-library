@@ -114,7 +114,7 @@ export function getLangCode(lang) {
 }
 
 // ── Call number generator ──────────────────────────────────────
-// Format: GENRE · CUT · LANGCODE · DDC · SEQ
+// Format: GENRE - CUT - LANGCODE - DDC - SEQ
 // LANGCODE and DDC are optional; included when available
 export function generateCallNum(genre, author, lang, ddc, existingBooks) {
   const g = genre || 'GEN';
@@ -131,5 +131,5 @@ export function generateCallNum(genre, author, lang, ddc, existingBooks) {
   if (ddcPart)  parts2.push(ddcPart);
   parts2.push(seq);
 
-  return { callnum: parts2.join(' · '), cutter };
+  return { callnum: parts2.join(' - '), cutter };
 }

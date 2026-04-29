@@ -45,14 +45,14 @@ export default function NumberingPage() {
         letterSpacing: '0.06em',
         border: '1px solid var(--border)',
       }}>
-        FIC · ORW · 001
+        FIC - ORW - 001
       </div>
 
       <div style={{ display: 'flex', gap: 10 }}>
         <Block label="Genre code" value="FIC" desc="3-letter genre identifier" />
-        <div style={{ display: 'flex', alignItems: 'center', color: 'var(--ink-3)', fontSize: 18 }}>·</div>
+        <div style={{ display: 'flex', alignItems: 'center', color: 'var(--ink-3)', fontSize: 18 }}>-</div>
         <Block label="Author code" value="ORW" desc="First 3 letters of last name (Cutter code)" />
-        <div style={{ display: 'flex', alignItems: 'center', color: 'var(--ink-3)', fontSize: 18 }}>·</div>
+        <div style={{ display: 'flex', alignItems: 'center', color: 'var(--ink-3)', fontSize: 18 }}>-</div>
         <Block label="Copy number" value="001" desc="Sequential within genre + author" />
       </div>
 

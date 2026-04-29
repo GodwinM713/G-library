@@ -1,41 +1,20 @@
 # Personal Library — Web App
 
-The mobile/web version of Personal Library. Runs in any browser, syncs via GitHub.
+Mobile/web version of Personal Library. Syncs via GitHub. Hosted on Vercel.
 
-## Live URL (after deploy)
-`https://YOUR_GITHUB_USERNAME.github.io/my-library`
+## Deploy to Vercel (free, 2 minutes)
 
-## Setup
-
-```bash
-npm install
-```
-
-**Edit `package.json`** — change the `homepage` field to your actual GitHub Pages URL:
-```json
-"homepage": "https://YOUR_GITHUB_USERNAME.github.io/my-library"
-```
+1. Push this folder as a repo on GitHub (can be the same G-library repo)
+2. Go to vercel.com → New Project → Import that repo
+3. Vercel auto-detects React — just click **Deploy**
+4. Every push to main re-deploys automatically
 
 ## Run locally
 ```bash
+npm install
 npm start
 ```
 
-## Deploy to GitHub Pages (auto)
-
-This repo has a GitHub Actions workflow (`.github/workflows/deploy.yml`).
-Every push to `main` automatically builds and deploys the app.
-
-**One-time GitHub setup:**
-1. Push this folder as a repo called `my-library` on GitHub
-2. Go to **Settings → Pages → Source → GitHub Actions**
-3. Done — the next push will deploy it
-
-## Manual deploy
-```bash
-npm run deploy
-```
-
 ## First use
-Open the deployed URL on your phone, tap **Add to Home Screen** for an app-like experience.
-Go to **Sync** and enter the same GitHub token + repo you used in the desktop app.
+Open your Vercel URL on your phone → tap **Share → Add to Home Screen**.
+Go to **Sync** tab and enter your GitHub PAT + data repo (my-library).
