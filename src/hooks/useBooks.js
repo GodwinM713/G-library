@@ -9,13 +9,12 @@ export function useBooks() {
   const [syncError, setSyncError]   = useState('');
 
   const shaRef   = useRef(null);
-  const booksRef = useRef([]);   // always up-to-date, avoids stale closure
+  const booksRef = useRef([]);
 
-  // Keep ref in sync whenever books state changes
-  const setBooksSynced = (b) => {
+  const setBooksSynced = useCallback((b) => {
     booksRef.current = b;
     setBooks(b);
-  };
+  }, []);
 
   // ── Load ─────────────────────────────────────────────────────
   const reload = useCallback(async () => {
@@ -35,80 +34,104 @@ export function useBooks() {
       setSyncStatus('error'); setSyncError(e.message);
     }
     setLoading(false);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [setBooksSynced]);
 
   useEffect(() => { reload(); }, [reload]);
 
-  // ── Push — always reads booksRef, never stale ─────────────────
-  const push = useCallback(async (newBooks) => {
+  // ── Push with merge — pulls latest first, merges by id ───────
+  // This means adding on PC while phone is open never wipes phone's books
+  const pushWithMerge = useCallback(async (localBooks) => {
     if (!isConfigured()) throw new Error('GitHub not configured');
     const { token, repo } = getConfig();
     setSyncStatus('syncing'); setSyncError('');
     try {
-      const newSha = await pushLibrary(newBooks, shaRef.current, token, repo);
-      shaRef.current = newSha;
-      setSyncStatus('ok');
-    } catch (e) {
-      if (e.message.includes('409') || e.message.includes('conflict')) {
-        setSyncStatus('error');
-        setSyncError('Sync conflict — reloading...');
-        await reload();
-        throw new Error('Conflict: reloaded latest. Please redo your change.');
+      // 1. Pull what's currently on GitHub
+      const { books: remoteBooks } = await fetchLibrary(token, repo);
+
+      // 2. Merge: remote is the base, local changes win for same id
+      //    Books only in remote (added by another device) are kept
+      //    Books only in local (just added/deleted here) win
+      const remoteMap = new Map(remoteBooks.map(b => [b.id, b]));
+      const localMap  = new Map(localBooks.map(b => [b.id, b]));
+
+      // Deleted locally — find ids that were in our previous booksRef but not in localBooks
+      const deletedIds = new Set(
+        booksRef.current
+          .map(b => b.id)
+          .filter(id => !localMap.has(id))
+      );
+
+      // Start from remote, apply local changes on top
+      const merged = [];
+      // Add all remote books that weren't deleted locally
+      for (const [id, book] of remoteMap) {
+        if (deletedIds.has(id)) continue;      // deleted on this device
+        if (localMap.has(id)) {
+          merged.push(localMap.get(id));        // updated on this device
+        } else {
+          merged.push(book);                    // only on remote (other device added it)
+        }
       }
+      // Add books that are only local (newly added on this device)
+      for (const [id, book] of localMap) {
+        if (!remoteMap.has(id)) merged.push(book);
+      }
+
+      // 3. Push merged result
+      const newSha = await pushLibrary(merged, null, token, repo);
+      shaRef.current = newSha;
+
+      // 4. Update local state with merged result
+      const sorted = [...merged].sort((a, b) => {
+        if (a.ownership !== b.ownership) return a.ownership === 'lended' ? 1 : -1;
+        return (a.callnum || '').localeCompare(b.callnum || '');
+      });
+      setBooksSynced(sorted);
+      setSyncStatus('ok');
+      return sorted;
+    } catch (e) {
       setSyncStatus('error'); setSyncError(e.message);
       throw e;
     }
-  }, [reload]);
+  }, [setBooksSynced]);
 
   // ── Add ───────────────────────────────────────────────────────
   const addBook = useCallback(async (book) => {
-    const current  = booksRef.current;
-    const newBook  = { ...book, id: Date.now() };
-    const newBooks = [...current, newBook];
-    await push(newBooks);
-    setBooksSynced(newBooks);
+    const newBook     = { ...book, id: Date.now() };
+    const withNew     = [...booksRef.current, newBook];
+    await pushWithMerge(withNew);
     return newBook;
-  }, [push]);
+  }, [pushWithMerge]);
 
-  // ── Update — always uses booksRef so it's never stale ─────────
+  // ── Update ────────────────────────────────────────────────────
   const updateBook = useCallback(async (updated) => {
-    const current     = booksRef.current;
+    const current      = booksRef.current;
     const existingBook = current.find(b => b.id === updated.id) || {};
 
-    // Regenerate call number if any relevant field changed
     const callnumFields = ['genre', 'author', 'lang', 'ddc'];
     const needsNewCallnum =
       updated.ownership !== 'lended' &&
       callnumFields.some(f => String(updated[f] || '') !== String(existingBook[f] || ''));
 
     let finalBook = { ...updated };
-
     if (needsNewCallnum) {
-      // Exclude this book from the sibling count
       const others = current.filter(b => b.id !== updated.id && b.ownership !== 'lended');
       const { callnum, cutter } = generateCallNum(
-        updated.genre,
-        updated.author,
-        updated.lang,
-        updated.ddc,
-        others
+        updated.genre, updated.author, updated.lang, updated.ddc, others
       );
       finalBook = { ...finalBook, callnum, cutter };
     }
 
-    const newBooks = current.map(b => b.id === finalBook.id ? finalBook : b);
-    await push(newBooks);
-    setBooksSynced(newBooks);
+    const updated_list = current.map(b => b.id === finalBook.id ? finalBook : b);
+    await pushWithMerge(updated_list);
     return finalBook;
-  }, [push]);
+  }, [pushWithMerge]);
 
   // ── Delete ────────────────────────────────────────────────────
   const deleteBook = useCallback(async (id) => {
-    const current  = booksRef.current;
-    const newBooks = current.filter(b => b.id !== id);
-    await push(newBooks);
-    setBooksSynced(newBooks);
-  }, [push]);
+    const without = booksRef.current.filter(b => b.id !== id);
+    await pushWithMerge(without);
+  }, [pushWithMerge]);
 
   // ── Export ────────────────────────────────────────────────────
   const exportExcel = useCallback(async () => {

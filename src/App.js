@@ -138,6 +138,22 @@ export default function App() {
               <div style={{ fontSize: 14 }}>GitHub sync not configured.</div>
               <button className="primary" onClick={() => setPage('settings')}>Set up GitHub sync</button>
             </div>
+          ) : syncStatus === 'error' ? (
+            <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:14, padding:32 }}>
+              <div style={{ fontSize:32 }}>⚠</div>
+              <div style={{ fontSize:15, fontWeight:500, color:'var(--ink)' }}>Could not load library</div>
+              <div style={{ fontSize:13, color:'#9b2020', background:'#fef2f2', border:'1px solid #fca5a5', borderRadius:'var(--radius)', padding:'10px 16px', maxWidth:420, textAlign:'center', lineHeight:1.6 }}>
+                {syncError}
+              </div>
+              <div style={{ fontSize:12, color:'var(--ink-3)', maxWidth:380, textAlign:'center', lineHeight:1.7 }}>
+                Check your token and repo name in <strong>Sync settings</strong>.<br/>
+                Token needs <strong>Contents: Read and write</strong> on your data repo.
+              </div>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={() => setPage('settings')}>Open Sync settings</button>
+                <button className="primary" onClick={reload}>Retry</button>
+              </div>
+            </div>
           ) : loading ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)' }}>
               Loading library…
