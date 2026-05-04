@@ -20,9 +20,9 @@ export default function BookCard({ book, onClick, onCycleStatus }) {
         display:'grid',
         gridTemplateColumns: isLended ? '1fr auto' : '110px 1fr auto',
         gap:14, alignItems:'center',
-        padding:'12px 16px',
+        padding:'10px 14px',
         background: isLended ? '#f7f4fd' : 'var(--paper)',
-        border: `1px solid ${isLended ? '#c9bfef' : 'var(--border)'}`,
+        border:`1px solid ${isLended ? '#c9bfef' : 'var(--border)'}`,
         borderLeft: isLended ? '3px solid #4a3580' : '1px solid var(--border)',
         borderRadius:'var(--radius)',
         cursor:'pointer',
@@ -31,31 +31,35 @@ export default function BookCard({ book, onClick, onCycleStatus }) {
       onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow)'; }}
       onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; }}
     >
-      {/* Call number badge (owned only) */}
+      {/* Cover or call number */}
       {!isLended && (
-        <div style={{
-          fontFamily:"'DM Mono', monospace", fontSize:11, fontWeight:500,
-          color:'var(--accent)', background:'var(--accent-bg)',
-          borderRadius:6, padding:'6px 8px', textAlign:'center',
-          letterSpacing:'0.04em', lineHeight:1.5, wordBreak:'break-all',
-        }}>
-          {book.callnum}
-        </div>
+        book.coverUrl ? (
+          <img
+            src={book.coverUrl}
+            alt="Cover"
+            style={{ width:56, height:80, objectFit:'cover', borderRadius:3, border:'1px solid var(--border)', boxShadow:'1px 1px 4px rgba(0,0,0,0.1)', display:'block', margin:'0 auto' }}
+          />
+        ) : (
+          <div style={{
+            fontFamily:"'DM Mono', monospace", fontSize:11, fontWeight:500,
+            color:'var(--accent)', background:'var(--accent-bg)',
+            borderRadius:6, padding:'6px 8px', textAlign:'center',
+            letterSpacing:'0.04em', lineHeight:1.5, wordBreak:'break-all',
+          }}>
+            {book.callnum}
+          </div>
+        )
       )}
 
       {/* Book info */}
       <div style={{ minWidth:0 }}>
         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
           {isLended && (
-            <span style={{
-              fontSize:10, fontWeight:600, padding:'1px 7px', borderRadius:20,
-              background:'#4a3580', color:'#fff', letterSpacing:'0.04em',
-            }}>LENDED</span>
+            <span style={{ fontSize:10, fontWeight:600, padding:'1px 7px', borderRadius:20, background:'#4a3580', color:'#fff', letterSpacing:'0.04em' }}>LENDED</span>
           )}
-          <div style={{
-            fontFamily:"'Playfair Display', serif", fontSize:15, fontWeight:500,
-            color:'var(--ink)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
-          }}>{book.title}</div>
+          <div style={{ fontFamily:"'Playfair Display', serif", fontSize:15, fontWeight:500, color:'var(--ink)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+            {book.title}
+          </div>
         </div>
         <div style={{ fontSize:13, color:'var(--ink-3)', marginBottom:6 }}>
           {isLended
@@ -69,9 +73,7 @@ export default function BookCard({ book, onClick, onCycleStatus }) {
             </span>
           )}
           {!isLended && book.sub && (
-            <span style={{ fontSize:11, background:'var(--paper-2)', color:'var(--ink-3)', borderRadius:20, padding:'2px 8px' }}>
-              {book.sub}
-            </span>
+            <span style={{ fontSize:11, background:'var(--paper-2)', color:'var(--ink-3)', borderRadius:20, padding:'2px 8px' }}>{book.sub}</span>
           )}
           {(book.shelf || book.window_loc) && (
             <span style={{ fontSize:11, background:'var(--paper-2)', color:'var(--ink-3)', borderRadius:20, padding:'2px 8px' }}>
@@ -81,16 +83,18 @@ export default function BookCard({ book, onClick, onCycleStatus }) {
         </div>
       </div>
 
-      {/* Status + cycle (owned only) */}
+      {/* Status */}
       <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:6 }}>
         {!isLended && (
           <>
             <span style={{ fontSize:11, fontWeight:500, background:ss.bg, color:ss.color, borderRadius:20, padding:'3px 10px', whiteSpace:'nowrap' }}>
               {ss.label}
             </span>
-            <button className="ghost" title="Cycle reading status"
-              onClick={e => { e.stopPropagation(); onCycleStatus(book); }}
-              style={{ fontSize:12, padding:'2px 8px', color:'var(--ink-3)' }}>↻</button>
+            {onCycleStatus && (
+              <button className="ghost" title="Cycle reading status"
+                onClick={e => { e.stopPropagation(); onCycleStatus(book); }}
+                style={{ fontSize:12, padding:'2px 8px', color:'var(--ink-3)' }}>↻</button>
+            )}
           </>
         )}
       </div>

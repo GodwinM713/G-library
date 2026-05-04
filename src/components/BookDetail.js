@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { getAllGenres, getGenreColor, LANGUAGE_CODES } from '../utils/callnum';
 import GenreSelect from './GenreSelect';
 
-const STATUS_LABEL = { read: 'Read', reading: 'Currently reading', unread: 'Unread' };
-const LBL = { fontSize: 11, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em' };
-const FG  = { display: 'flex', flexDirection: 'column', gap: 5 };
+const STATUS_LABEL = { read:'Read', reading:'Currently reading', unread:'Unread' };
+const LBL = { fontSize:11, fontWeight:600, color:'var(--ink-3)', textTransform:'uppercase', letterSpacing:'0.06em' };
+const FG  = { display:'flex', flexDirection:'column', gap:5 };
 
 function Row({ label, value }) {
   if (!value) return null;
@@ -16,14 +16,68 @@ function Row({ label, value }) {
   );
 }
 
-export default function BookDetail({ book, onClose, onDelete, onUpdate, onCycleStatus }) {
-  // ALL hooks must come before any conditional return
+function CoverUpload({ book, onUpload, viewerMode }) {
+  const fileRef = useRef();
+  const [dragging, setDragging] = useState(false);
+
+  const processFile = (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (e) => onUpload(book.id, e.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  if (viewerMode) {
+    return book.coverUrl ? (
+      <img src={book.coverUrl} alt="Cover" style={{ width:80, height:114, objectFit:'cover', borderRadius:4, border:'1px solid var(--border)', boxShadow:'var(--shadow)' }} />
+    ) : null;
+  }
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:6, alignItems:'center' }}>
+      {book.coverUrl ? (
+        <div style={{ position:'relative' }}>
+          <img src={book.coverUrl} alt="Cover" style={{ width:80, height:114, objectFit:'cover', borderRadius:4, border:'1px solid var(--border)', boxShadow:'var(--shadow)', display:'block' }} />
+          <button
+            onClick={() => onUpload(book.id, null)}
+            style={{ position:'absolute', top:-6, right:-6, width:20, height:20, borderRadius:'50%', background:'#9b2020', color:'#fff', border:'none', fontSize:11, cursor:'pointer', padding:0, display:'flex', alignItems:'center', justifyContent:'center' }}
+            title="Remove cover"
+          >×</button>
+        </div>
+      ) : (
+        <div
+          onClick={() => fileRef.current.click()}
+          onDragOver={e => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={e => { e.preventDefault(); setDragging(false); processFile(e.dataTransfer.files[0]); }}
+          style={{
+            width:80, height:114,
+            borderRadius:4, border:`2px dashed ${dragging ? 'var(--accent)' : 'var(--border-2)'}`,
+            background: dragging ? 'var(--accent-bg)' : 'var(--paper-2)',
+            display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+            cursor:'pointer', gap:4, transition:'all .15s',
+          }}
+        >
+          <span style={{ fontSize:20 }}>📷</span>
+          <span style={{ fontSize:9, color:'var(--ink-3)', textAlign:'center', lineHeight:1.3 }}>Add cover</span>
+        </div>
+      )}
+      <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }} onChange={e => processFile(e.target.files[0])} />
+      {!book.coverUrl && (
+        <div style={{ fontSize:9, color:'var(--ink-3)', textAlign:'center', lineHeight:1.3, maxWidth:80 }}>
+          Click or drag image
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function BookDetail({ book, onClose, onDelete, onUpdate, onCycleStatus, viewerMode, onUploadCover }) {
   const [mode, setMode]     = useState('view');
   const [form, setForm]     = useState(book || {});
   const [saving, setSaving] = useState(false);
   const [err, setErr]       = useState('');
 
-  // Now safe to return early
   if (!book) return null;
 
   const genres   = getAllGenres();
@@ -40,7 +94,6 @@ export default function BookDetail({ book, onClose, onDelete, onUpdate, onCycleS
 
   const handleCancel = () => { setForm({ ...book }); setErr(''); setMode('view'); };
 
-  // ── VIEW ─────────────────────────────────────────────────────
   if (mode === 'view') {
     const b  = form;
     const gc = getGenreColor(b.genre);
@@ -50,19 +103,32 @@ export default function BookDetail({ book, onClose, onDelete, onUpdate, onCycleS
         style={{ position:'fixed', inset:0, background:'rgba(28,24,20,0.45)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200 }}>
         <div style={{ background:'var(--paper)', borderRadius:'var(--radius-lg)', border:'1px solid var(--border)', boxShadow:'var(--shadow-lg)', width:500, maxWidth:'90vw', display:'flex', flexDirection:'column', overflow:'hidden', maxHeight:'90vh' }}>
 
-          <div style={{ padding:'20px 24px 16px', background: iL ? '#f7f4fd' : 'var(--paper-2)', borderBottom:'1px solid var(--border)' }}>
-            {iL
-              ? <div style={{ display:'inline-block', fontSize:11, fontWeight:600, padding:'2px 10px', borderRadius:20, background:'#4a3580', color:'#fff', marginBottom:10, letterSpacing:'0.04em' }}>LENDED OUT</div>
-              : <div style={{ fontFamily:"'DM Mono',monospace", fontSize:13, fontWeight:500, color:'var(--accent)', marginBottom:6, letterSpacing:'0.04em' }}>{b.callnum}</div>
-            }
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:500, color:'var(--ink)', lineHeight:1.3, marginBottom:4 }}>{b.title}</div>
-            {!iL && <div style={{ fontSize:14, color:'var(--ink-3)' }}>{b.author || 'Unknown author'}</div>}
-            {iL && b.lended_to && <div style={{ fontSize:14, color:'#4a3580' }}>Lended to: <strong>{b.lended_to}</strong></div>}
-            {!iL && b.genre && (
-              <span style={{ display:'inline-block', marginTop:10, fontSize:12, fontWeight:500, background:gc.bg, color:gc.text, borderRadius:20, padding:'3px 10px' }}>
-                {genres[b.genre] || b.genre}
-              </span>
-            )}
+          <div style={{ padding:'20px 24px 16px', background:iL ? '#f7f4fd' : 'var(--paper-2)', borderBottom:'1px solid var(--border)' }}>
+            <div style={{ display:'flex', gap:16, alignItems:'flex-start' }}>
+              {/* Cover */}
+              {onUploadCover && (
+                <div style={{ flexShrink:0 }}>
+                  <CoverUpload book={b} onUpload={onUploadCover} viewerMode={viewerMode} />
+                </div>
+              )}
+              {!onUploadCover && b.coverUrl && (
+                <img src={b.coverUrl} alt="Cover" style={{ width:70, height:100, objectFit:'cover', borderRadius:4, border:'1px solid var(--border)', boxShadow:'var(--shadow)', flexShrink:0 }} />
+              )}
+              <div style={{ flex:1, minWidth:0 }}>
+                {iL
+                  ? <div style={{ display:'inline-block', fontSize:11, fontWeight:600, padding:'2px 10px', borderRadius:20, background:'#4a3580', color:'#fff', marginBottom:10, letterSpacing:'0.04em' }}>LENDED OUT</div>
+                  : <div style={{ fontFamily:"'DM Mono',monospace", fontSize:13, fontWeight:500, color:'var(--accent)', marginBottom:6, letterSpacing:'0.04em' }}>{b.callnum}</div>
+                }
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:500, color:'var(--ink)', lineHeight:1.3, marginBottom:4 }}>{b.title}</div>
+                {!iL && <div style={{ fontSize:14, color:'var(--ink-3)' }}>{b.author || 'Unknown author'}</div>}
+                {iL && b.lended_to && <div style={{ fontSize:14, color:'#4a3580' }}>Lended to: <strong>{b.lended_to}</strong></div>}
+                {!iL && b.genre && (
+                  <span style={{ display:'inline-block', marginTop:10, fontSize:12, fontWeight:500, background:gc.bg, color:gc.text, borderRadius:20, padding:'3px 10px' }}>
+                    {genres[b.genre] || b.genre}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
           <div style={{ padding:'12px 24px 16px', display:'flex', flexDirection:'column', overflowY:'auto' }}>
@@ -80,10 +146,13 @@ export default function BookDetail({ book, onClose, onDelete, onUpdate, onCycleS
           </div>
 
           <div style={{ display:'flex', gap:8, padding:'12px 24px', borderTop:'1px solid var(--border)', justifyContent:'space-between', alignItems:'center' }}>
-            <button className="danger ghost" onClick={onDelete}>Delete</button>
+            {!viewerMode && onDelete
+              ? <button className="danger ghost" onClick={onDelete}>Delete</button>
+              : <div />
+            }
             <div style={{ display:'flex', gap:8 }}>
-              {!iL && <button onClick={() => onCycleStatus(b)}>Status ↻</button>}
-              <button onClick={() => { setForm({ ...book }); setMode('edit'); }}>✎ Edit</button>
+              {!iL && !viewerMode && onCycleStatus && <button onClick={() => onCycleStatus(b)}>Status ↻</button>}
+              {!viewerMode && onUpdate && <button onClick={() => { setForm({ ...book }); setMode('edit'); }}>✎ Edit</button>}
               <button className="primary" onClick={onClose}>Done</button>
             </div>
           </div>
@@ -92,7 +161,7 @@ export default function BookDetail({ book, onClose, onDelete, onUpdate, onCycleS
     );
   }
 
-  // ── EDIT ─────────────────────────────────────────────────────
+  // EDIT mode
   return (
     <div onClick={e => { if (e.target === e.currentTarget) handleCancel(); }}
       style={{ position:'fixed', inset:0, background:'rgba(28,24,20,0.45)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200 }}>
@@ -104,6 +173,16 @@ export default function BookDetail({ book, onClose, onDelete, onUpdate, onCycleS
         </div>
 
         <div style={{ padding:'18px 22px', overflowY:'auto', display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px 16px' }}>
+
+          {/* Cover upload in edit mode */}
+          {onUploadCover && (
+            <div style={{ gridColumn:'1/-1', display:'flex', alignItems:'center', gap:16 }}>
+              <CoverUpload book={form} onUpload={(id, url) => set('coverUrl', url)} viewerMode={false} />
+              <div style={{ fontSize:12, color:'var(--ink-3)', lineHeight:1.6 }}>
+                Upload a cover image.<br/>JPG, PNG, WebP supported.<br/>Stored as base64 in your library.
+              </div>
+            </div>
+          )}
 
           <div style={{ ...FG, gridColumn:'1/-1' }}>
             <label style={LBL}>Title *</label>
