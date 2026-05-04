@@ -4,7 +4,14 @@ const isElectron = typeof window !== 'undefined' && !!window.library?.ghFetch;
 const FILE_PATH  = 'library.json';
 const GH_API     = 'https://api.github.com';
 
-// ── Config ────────────────────────────────────────────────────
+// ── Read-only public config ───────────────────────────────────
+// Set these in Vercel → Project → Settings → Environment Variables.
+// Use a GitHub fine-grained token with Contents: Read-only on your data repo.
+// Safe to embed in built JS — it literally cannot write anything.
+const RO_TOKEN = process.env.REACT_APP_RO_TOKEN || '';
+const RO_REPO  = process.env.REACT_APP_RO_REPO  || '';
+
+// ── Read-write config (owner's browser only) ──────────────────
 export function getConfig() {
   try { return JSON.parse(localStorage.getItem('plm_gh_config') || 'null'); }
   catch { return null; }
@@ -15,9 +22,25 @@ export function saveConfig(token, repo) {
 export function clearConfig() {
   localStorage.removeItem('plm_gh_config');
 }
+
+// Returns true if the owner's read-write token is present
 export function isConfigured() {
   const c = getConfig();
   return !!(c?.token && c?.repo);
+}
+
+// Returns true if at least read-only access is available (owner OR baked-in RO token)
+export function isReadable() {
+  return isConfigured() || !!(RO_TOKEN && RO_REPO);
+}
+
+// Returns the best available token+repo for READ operations:
+//   owner's RW token if present, otherwise the baked-in RO token
+function getReadConfig() {
+  const rw = getConfig();
+  if (rw?.token && rw?.repo) return { token: rw.token, repo: rw.repo };
+  if (RO_TOKEN && RO_REPO)   return { token: RO_TOKEN, repo: RO_REPO };
+  return null;
 }
 
 // ── Safe base64 for all Unicode ───────────────────────────────
@@ -34,7 +57,7 @@ function fromBase64(b64) {
   return new TextDecoder('utf-8').decode(bytes);
 }
 
-// ── GitHub REST helper — attaches status to thrown errors ─────
+// ── GitHub REST helper ────────────────────────────────────────
 async function ghFetch(method, path, body, token) {
   const res = await fetch(`${GH_API}${path}`, {
     method,
@@ -56,29 +79,27 @@ async function ghFetch(method, path, body, token) {
   return data;
 }
 
-// ── fetchLibrary ──────────────────────────────────────────────
+// ── fetchLibrary — uses best available read token ─────────────
 export async function fetchLibrary(token, repo) {
+  // If called without explicit args (viewer path), use best available
+  const cfg = (token && repo) ? { token, repo } : getReadConfig();
+  if (!cfg) throw new Error('No read access configured');
+
   if (isElectron) {
-    const r = await window.library.ghFetch({ token, repo });
+    const r = await window.library.ghFetch({ token: cfg.token, repo: cfg.repo });
     return { books: r.books, sha: r.sha };
   }
 
   let data;
   try {
-    data = await ghFetch('GET', `/repos/${repo}/contents/${FILE_PATH}`, null, token);
+    data = await ghFetch('GET', `/repos/${cfg.repo}/contents/${FILE_PATH}`, null, cfg.token);
   } catch (e) {
-    // 404 just means the file hasn't been created yet — start with empty library
     if (e.status === 404) return { books: [], sha: null };
-
-    // 401 / 403 = bad token or wrong repo permissions
     if (e.status === 401 || e.status === 403)
       throw new Error(`GitHub auth failed (${e.status}) — check your token in Sync settings`);
-
-    // Anything else — re-throw with a clear message
     throw new Error(`Could not read library from GitHub: ${e.message}`);
   }
 
-  // Parse the file content
   try {
     const json = fromBase64(data.content);
     const books = JSON.parse(json);
@@ -89,7 +110,7 @@ export async function fetchLibrary(token, repo) {
   }
 }
 
-// ── getLatestSha ──────────────────────────────────────────────
+// ── getLatestSha — only used for writes, requires RW token ────
 async function getLatestSha(token, repo) {
   try {
     if (isElectron) {
@@ -104,9 +125,11 @@ async function getLatestSha(token, repo) {
   }
 }
 
-// ── pushLibrary ───────────────────────────────────────────────
+// ── pushLibrary — always requires owner's RW token ────────────
 export async function pushLibrary(books, _ignoredSha, token, repo) {
-  // Always get a fresh SHA immediately before writing
+  // Require explicit RW token — never falls back to RO token
+  if (!token || !repo) throw new Error('Write token required');
+
   const currentSha = await getLatestSha(token, repo);
 
   if (isElectron) {

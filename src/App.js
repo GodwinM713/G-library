@@ -7,7 +7,7 @@ import SettingsPage from './pages/SettingsPage';
 import LibraryHome from './pages/LibraryHome';
 import NumberingGuideModal from './components/NumberingGuideModal';
 import { useBooks } from './hooks/useBooks';
-import { isConfigured } from './utils/github';
+import { isConfigured, isReadable } from './utils/github';
 
 function isViewerMode() {
   const params = new URLSearchParams(window.location.search);
@@ -69,7 +69,9 @@ function HeaderMenu({ onExport, onGuide, onSync, viewerMode }) {
           {item('Copy viewer link', '🔗', () => {
             const url = new URL(window.location.href);
             url.searchParams.set('viewer', '1');
-            navigator.clipboard.writeText(url.toString()).then(() => alert('Viewer link copied!\nShare this link with others so they can browse your library.'));
+            navigator.clipboard.writeText(url.toString()).then(() =>
+              alert('Viewer link copied!\nShare this link — viewers can browse but not edit.')
+            );
           })}
         </div>
       )}
@@ -84,7 +86,14 @@ const PAGE_TITLE = {
 
 export default function App() {
   const viewerMode = isViewerMode();
-  const [page, setPage] = useState(() => isConfigured() ? 'home' : (viewerMode ? 'home' : 'settings'));
+  const readable   = isReadable();
+  const configured = isConfigured();
+
+  const [page, setPage] = useState(() => {
+    if (readable) return 'home';
+    if (!viewerMode) return 'settings';
+    return 'home';
+  });
   const [shelfFilter, setShelfFilter] = useState('');
   const [showGuide, setShowGuide] = useState(false);
   const { books, loading, syncStatus, syncError, addBook, updateBook, deleteBook, exportExcel, reload } = useBooks();
@@ -111,7 +120,7 @@ export default function App() {
 
   return (
     <div style={{ display:'flex', height:'100vh', overflow:'hidden' }}>
-      <Sidebar active={page} onNav={setPage} stats={stats} syncStatus={syncStatus} configured={isConfigured()} viewerMode={viewerMode} />
+      <Sidebar active={page} onNav={setPage} stats={stats} syncStatus={syncStatus} configured={configured} viewerMode={viewerMode} />
 
       <main style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', background:'var(--paper)' }}>
         <header style={{ padding:'11px 20px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0, background:'var(--paper)' }}>
@@ -137,11 +146,18 @@ export default function App() {
         <div style={{ flex:1, display:'flex', overflow:'hidden' }}>
           {page === 'settings' && !viewerMode ? (
             <SettingsPage onSaved={handleSettingsSaved} />
-          ) : !isConfigured() ? (
+          ) : !readable && !viewerMode ? (
+            /* Owner hasn't set up GitHub yet */
             <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, color:'var(--ink-3)' }}>
               <div style={{ fontSize:32, color:'var(--border-2)' }}>⟳</div>
-              <div style={{ fontSize:14 }}>{viewerMode ? 'Library not configured.' : 'GitHub sync not configured.'}</div>
-              {!viewerMode && <button className="primary" onClick={() => setPage('settings')}>Set up GitHub sync</button>}
+              <div style={{ fontSize:14 }}>GitHub sync not configured.</div>
+              <button className="primary" onClick={() => setPage('settings')}>Set up GitHub sync</button>
+            </div>
+          ) : !readable && viewerMode ? (
+            /* Viewer with no RO token baked in */
+            <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, color:'var(--ink-3)' }}>
+              <div style={{ fontSize:32, color:'var(--border-2)' }}>📚</div>
+              <div style={{ fontSize:14 }}>Library not available.</div>
             </div>
           ) : syncStatus === 'error' ? (
             <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:14, padding:32 }}>
