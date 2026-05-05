@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import Sidebar from './components/Sidebar';
 import SearchPage from './pages/SearchPage';
 import AddPage from './pages/AddPage';
@@ -187,6 +188,7 @@ export default function App() {
       </main>
 
       {showGuide && <NumberingGuideModal onClose={() => setShowGuide(false)} />}
+      <Analytics />
     </div>
   );
 }
