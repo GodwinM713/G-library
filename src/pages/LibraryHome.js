@@ -10,19 +10,6 @@ const STATUS_DOT = {
   unread:  '#ccc3b2',
 };
 
-function CoverImage({ book, size = 120 }) {
-  if (book.coverUrl) {
-    return (
-      <img
-        src={book.coverUrl}
-        alt={book.title}
-        style={{ width:'100%', height:'100%', objectFit:'cover' }}
-        onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-      />
-    );
-  }
-  return null;
-}
 
 function BookTile({ book, onClick }) {
   const gc = getGenreColor(book.genre);
