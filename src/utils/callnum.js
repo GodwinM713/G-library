@@ -123,7 +123,7 @@ export function generateCallNum(genre, author, lang, ddc, existingBooks) {
   const cutter = last.slice(0, 3).padEnd(3, 'X');
   const langCode = getLangCode(lang);
   const ddcPart = ddc ? ddc.toString().trim() : '';
-  const siblings = existingBooks.filter(b => b.genre === genre && b.cutter === cutter);
+  const siblings = existingBooks.filter(b => b.genre === genre);
   const seq = String(siblings.length + 1).padStart(3, '0');
 
   const parts2 = [g, cutter];

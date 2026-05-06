@@ -95,8 +95,13 @@ export async function fetchLibrary(token, repo) {
     data = await ghFetch('GET', `/repos/${cfg.repo}/contents/${FILE_PATH}`, null, cfg.token);
   } catch (e) {
     if (e.status === 404) return { books: [], sha: null };
-    if (e.status === 401 || e.status === 403)
-      throw new Error(`GitHub auth failed (${e.status}) — check your token in Sync settings`);
+    if (e.status === 401 || e.status === 403) {
+      const isRO = cfg.token === RO_TOKEN;
+      throw new Error(isRO
+        ? `Library unavailable — the read-only access token needs to be refreshed (${e.status})`
+        : `GitHub auth failed (${e.status}) — check your token in Sync settings`
+      );
+    }
     throw new Error(`Could not read library from GitHub: ${e.message}`);
   }
 
